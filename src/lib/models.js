@@ -7961,6 +7961,14 @@ export const getResolutionsForI2VModel = (modelId) => {
     return [];
 };
 
+export const getModesForModel = (modelId) => {
+    const model = [...t2vModels, ...i2vModels].find(m => m.id === modelId);
+    if (!model) return [];
+    const modeInput = model.inputs?.mode;
+    if (modeInput?.enum) return modeInput.enum;
+    return [];
+};
+
 export const getResolutionsForI2IModel = (modelId) => {
     const model = getI2IModelById(modelId);
     if (!model) return [];

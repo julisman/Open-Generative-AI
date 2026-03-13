@@ -1,3 +1,5 @@
+import { SettingsModal } from './SettingsModal.js';
+
 export function Header(navigate) {
     const header = document.createElement('header');
     header.className = 'w-full flex flex-col z-50 sticky top-0';
@@ -73,8 +75,7 @@ export function Header(navigate) {
         </svg>
     `;
     keyBtn.onclick = () => {
-        localStorage.removeItem('muapi_key');
-        window.location.reload();
+        document.body.appendChild(SettingsModal());
     };
 
     rightPart.appendChild(keyBtn);

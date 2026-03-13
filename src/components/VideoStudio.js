@@ -1,5 +1,5 @@
 import { muapi } from '../lib/muapi.js';
-import { t2vModels, getAspectRatiosForVideoModel, getDurationsForModel, getResolutionsForVideoModel, i2vModels, getAspectRatiosForI2VModel, getDurationsForI2VModel, getResolutionsForI2VModel, v2vModels } from '../lib/models.js';
+import { t2vModels, getAspectRatiosForVideoModel, getDurationsForModel, getResolutionsForVideoModel, i2vModels, getAspectRatiosForI2VModel, getDurationsForI2VModel, getResolutionsForI2VModel, v2vModels, getModesForModel } from '../lib/models.js';
 import { AuthModal } from './AuthModal.js';
 import { createUploadPicker } from './UploadPicker.js';
 import { savePendingJob, removePendingJob, getPendingJobs } from '../lib/pendingJobs.js';
@@ -16,6 +16,7 @@ export function VideoStudio() {
     let selectedDuration = defaultModel.inputs?.duration?.default || 5;
     let selectedResolution = defaultModel.inputs?.resolution?.default || '';
     let selectedQuality = defaultModel.inputs?.quality?.default || '';
+    let selectedMode = '';
     let lastGenerationId = null;
     let lastGenerationModel = null;
     let dropdownOpen = null;
@@ -28,6 +29,7 @@ export function VideoStudio() {
     const getCurrentAspectRatios = (id) => imageMode ? getAspectRatiosForI2VModel(id) : getAspectRatiosForVideoModel(id);
     const getCurrentDurations = (id) => imageMode ? getDurationsForI2VModel(id) : getDurationsForModel(id);
     const getCurrentResolutions = (id) => imageMode ? getResolutionsForI2VModel(id) : getResolutionsForVideoModel(id);
+    const getCurrentModes = (id) => getModesForModel(id);
     const getCurrentModel = () => getCurrentModels().find(m => m.id === selectedModel);
     const getQualitiesForModel = (id) => {
         const model = getCurrentModels().find(m => m.id === id);
@@ -284,11 +286,16 @@ export function VideoStudio() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="opacity-60 text-secondary"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
     `, selectedQuality || 'basic', 'v-quality-btn');
 
+    const modeBtn = createControlBtn(`
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="opacity-60 text-secondary"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    `, selectedMode || 'normal', 'v-mode-btn');
+
     controlsLeft.appendChild(modelBtn);
     controlsLeft.appendChild(arBtn);
     controlsLeft.appendChild(durationBtn);
     controlsLeft.appendChild(resolutionBtn);
     controlsLeft.appendChild(qualityBtn);
+    controlsLeft.appendChild(modeBtn);
 
     // Initial visibility (t2v mode)
     const initDurations = getDurationsForModel(defaultModel.id);
@@ -296,6 +303,7 @@ export function VideoStudio() {
     const initResolutions = getResolutionsForVideoModel(defaultModel.id);
     resolutionBtn.style.display = initResolutions.length > 0 ? 'flex' : 'none';
     qualityBtn.style.display = 'none';
+    modeBtn.style.display = getModesForModel(defaultModel.id).length > 0 ? 'flex' : 'none';
 
     const generateBtn = document.createElement('button');
     generateBtn.className = 'bg-primary text-black px-6 md:px-8 py-3 md:py-3.5 rounded-xl md:rounded-[1.5rem] font-black text-sm md:text-base hover:shadow-glow hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2.5 w-full sm:w-auto shadow-lg';
@@ -322,6 +330,7 @@ export function VideoStudio() {
             durationBtn.style.display = 'none';
             resolutionBtn.style.display = 'none';
             qualityBtn.style.display = 'none';
+            modeBtn.style.display = 'none';
             extendBanner.classList.add('hidden');
             extendBanner.classList.remove('flex');
             return;
@@ -366,6 +375,17 @@ export function VideoStudio() {
         } else {
             selectedQuality = '';
             qualityBtn.style.display = 'none';
+        }
+
+        // Mode
+        const modes = getCurrentModes(modelId);
+        if (modes.length > 0) {
+            selectedMode = model?.inputs?.mode?.default || modes[0];
+            document.getElementById('v-mode-btn-label').textContent = selectedMode;
+            modeBtn.style.display = 'flex';
+        } else {
+            selectedMode = '';
+            modeBtn.style.display = 'none';
         }
 
         // Extend banner (extend model only)
@@ -568,6 +588,28 @@ export function VideoStudio() {
                 list.appendChild(item);
             });
             dropdown.appendChild(list);
+
+        } else if (type === 'mode') {
+            dropdown.classList.add('max-w-[200px]');
+            dropdown.innerHTML = `<div class="text-[10px] font-bold text-secondary uppercase tracking-widest px-3 py-2 border-b border-white/5 mb-2">Mode</div>`;
+            const list = document.createElement('div');
+            list.className = 'flex flex-col gap-1';
+            getCurrentModes(selectedModel).forEach(m => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-3.5 hover:bg-white/5 rounded-2xl cursor-pointer transition-all group';
+                item.innerHTML = `
+                    <span class="text-xs font-bold text-white opacity-80 group-hover:opacity-100 capitalize">${m}</span>
+                    ${selectedMode === m ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d9ff00" stroke-width="4"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+                `;
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    selectedMode = m;
+                    document.getElementById('v-mode-btn-label').textContent = m;
+                    closeDropdown();
+                };
+                list.appendChild(item);
+            });
+            dropdown.appendChild(list);
         }
 
         // Position dropdown
@@ -600,6 +642,7 @@ export function VideoStudio() {
     durationBtn.onclick = toggleDropdown('duration', durationBtn);
     resolutionBtn.onclick = toggleDropdown('resolution', resolutionBtn);
     qualityBtn.onclick = toggleDropdown('quality', qualityBtn);
+    modeBtn.onclick = toggleDropdown('mode', modeBtn);
 
     window.addEventListener('click', closeDropdown);
     container.appendChild(dropdown);
@@ -934,6 +977,7 @@ export function VideoStudio() {
                 const resolutions = getCurrentResolutions(selectedModel);
                 if (resolutions.length > 0) i2vParams.resolution = selectedResolution;
                 if (selectedQuality) i2vParams.quality = selectedQuality;
+                if (selectedMode) i2vParams.mode = selectedMode;
 
                 const res = await muapi.generateI2V(i2vParams);
                 console.log('[VideoStudio] I2V response:', res);
@@ -976,6 +1020,7 @@ export function VideoStudio() {
             if (resolutions.length > 0) params.resolution = selectedResolution;
 
             if (selectedQuality) params.quality = selectedQuality;
+            if (selectedMode) params.mode = selectedMode;
 
             const res = await muapi.generateVideo(params);
 

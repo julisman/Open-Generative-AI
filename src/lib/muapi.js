@@ -183,6 +183,7 @@ export class MuapiClient {
         if (params.duration) finalPayload.duration = params.duration;
         if (params.resolution) finalPayload.resolution = params.resolution;
         if (params.quality) finalPayload.quality = params.quality;
+        if (params.mode) finalPayload.mode = params.mode;
         if (params.image_url) finalPayload.image_url = params.image_url;
 
         console.log('[Muapi] Video Request:', url);
@@ -329,6 +330,7 @@ export class MuapiClient {
         if (params.duration) finalPayload.duration = params.duration;
         if (params.resolution) finalPayload.resolution = params.resolution;
         if (params.quality) finalPayload.quality = params.quality;
+        if (params.mode) finalPayload.mode = params.mode;
 
         console.log('[Muapi] I2V Request:', url);
         console.log('[Muapi] I2V Payload:', finalPayload);
